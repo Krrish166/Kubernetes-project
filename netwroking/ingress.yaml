@@ -2,11 +2,18 @@ apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
   name: app-ingress
-  labels:
-    name: datastore-ing
   namespace: frontend
+  annotations:
+    kubernetes.io/ingress.class: alb
+
+    alb.ingress.kubernetes.io/scheme: internet-facing
+    alb.ingress.kubernetes.io/target-type: ip
+
+    alb.ingress.kubernetes.io/listen-ports: '[{"HTTP":80},{"HTTPS":443}]'
+    alb.ingress.kubernetes.io/certificate-arn: arn:aws:acm:ap-south-1:811572529216:certificate/0a2b41a7-21b8-48f2-b4b5-0a2239581876
+    alb.ingress.kubernetes.io/ssl-redirect: "443"
+
 spec:
-  ingressClassName: nginx
   rules:
     - host: bkpro.site
       http:
