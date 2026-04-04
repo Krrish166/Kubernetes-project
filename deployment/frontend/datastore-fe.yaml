@@ -14,7 +14,7 @@ spec:
     spec:
       containers:
         - name: mywebapp
-          image: 634107240549.dkr.ecr.us-east-1.amazonaws.com/datastore-frontend:v47.0
+          image: 811572529216.dkr.ecr.ap-south-1.amazonaws.com/datastore-fe:latest
           env:
             - name: API_URL
               valueFrom:
