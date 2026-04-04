@@ -321,11 +321,11 @@ subjects:
 ---
 apiVersion: v1
 data:
-  http-snippet: |
-    server {
-      listen 2443;
-      return 308 https://$host$request_uri;
-    }
+  # http-snippet: |
+  #   server {
+  #     listen 2443;
+  #     return 308 https://$host$request_uri;
+  #   }
   proxy-real-ip-cidr: 192.168.0.0/16
   use-forwarded-headers: "true"
 kind: ConfigMap
@@ -366,7 +366,7 @@ spec:
       name: http
       port: 80
       protocol: TCP
-      targetPort: tohttps
+      targetPort: http
     - appProtocol: https
       name: https
       port: 443
