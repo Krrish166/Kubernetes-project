@@ -342,41 +342,40 @@ metadata:
 apiVersion: v1
 kind: Service
 metadata:
+  name: ingress-nginx-controller
+  namespace: ingress-nginx
   annotations:
-    service.beta.kubernetes.io/aws-load-balancer-connection-idle-timeout: "60"
-    service.beta.kubernetes.io/aws-load-balancer-cross-zone-load-balancing-enabled: "true"
+    service.beta.kubernetes.io/aws-load-balancer-type: "nlb"
     service.beta.kubernetes.io/aws-load-balancer-ssl-cert: arn:aws:acm:ap-south-1:811572529216:certificate/0a2b41a7-21b8-48f2-b4b5-0a2239581876
-    service.beta.kubernetes.io/aws-load-balancer-ssl-ports: https
-    service.beta.kubernetes.io/aws-load-balancer-type: alb
+    service.beta.kubernetes.io/aws-load-balancer-ssl-ports: "443"
+    service.beta.kubernetes.io/aws-load-balancer-cross-zone-load-balancing-enabled: "true"
+
   labels:
     app.kubernetes.io/component: controller
     app.kubernetes.io/instance: ingress-nginx
     app.kubernetes.io/name: ingress-nginx
     app.kubernetes.io/part-of: ingress-nginx
     app.kubernetes.io/version: 1.12.2
-  name: ingress-nginx-controller
-  namespace: ingress-nginx
+
 spec:
+  type: LoadBalancer
   externalTrafficPolicy: Local
-  ipFamilies:
-    - IPv4
-  ipFamilyPolicy: SingleStack
-  ports:
-    - appProtocol: http
-      name: http
-      port: 80
-      protocol: TCP
-      targetPort: http
-    - appProtocol: https
-      name: https
-      port: 443
-      protocol: TCP
-      targetPort: http
+
   selector:
     app.kubernetes.io/component: controller
     app.kubernetes.io/instance: ingress-nginx
     app.kubernetes.io/name: ingress-nginx
-  type: LoadBalancer
+
+  ports:
+    - name: http
+      port: 80
+      targetPort: 80
+      protocol: TCP
+
+    - name: https
+      port: 443
+      targetPort: 80
+      protocol: TCP
 ---
 apiVersion: v1
 kind: Service
