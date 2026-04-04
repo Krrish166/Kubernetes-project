@@ -1,0 +1,103 @@
+git remote add origin https://github.com/cameronmcnz/example-website.git
+git push -u -f origin master
+
+./mvnw validate -> Checks project structure is correct and all dependencies downloaded.
+./mvnw compile -> Compiles source code and converts .java files to .class files.
+./mvnw test -> Executes test cases.
+./mvnw package -> Creates jar file.
+
+./mvnw dependency:tree -> It displays dependencies in tree format.
+./mvnw clean -> Removes target directory.
+
+docker build --platform linux/amd64 -t datastore:v34.0 .
+docker tag datastore:1.0 8072388539/datastore:v1.0
+docker push 8072388539/datastore:v1.0
+
+sed -i "" "s/nginx:1.1/busybox:1.2/" test
+
+create database datastore;
+show databases;
+use datastore;
+CREATE TABLE Student (
+    id BIGINT NOT NULL AUTO_INCREMENT,
+    name VARCHAR(255),
+    age INT,
+    PRIMARY KEY (id)
+);
+show tables;
+select * from Student;
+
+Building the application
+------------------------
+mvn clean package -Dspring.profiles.active=build
+
+[root@ip-10-0-3-141 ~]# export MYSQL_HOST=jdbc:mysql://database-2.cetueqgig5p3.us-east-1.rds.amazonaws.com:3306/datastore
+[root@ip-10-0-3-141 ~]# export MYSQL_USERNAME=admin
+[root@ip-10-0-3-141 ~]# export MYSQL_PASSWORD=shivakumar
+[root@ip-10-0-3-141 ~]# export LOG_FILE_PATH=/var/log/app/datastore.log
+
+
+
+mvn clean package -Dspring.profiles.active=build
+
+
+
+#!/bin/bash
+exec > /var/log/user-data.log 2>&1
+set -x
+
+echo "Executing User_Data In $(envname)"
+
+# Update and install Java
+yum update -y
+yum install java-11-amazon-corretto -y
+
+# Create log directory
+mkdir -p /var/log/app/
+chown ec2-user:ec2-user /var/log/app/
+
+cd /home/ec2-user
+
+# Download Spring Boot application JAR from S3
+aws s3 cp s3://cheetah-dev-app-jar-bucket/datastore-0.0.7.jar .
+
+# Set proper permissions on the JAR
+chmod 755 datastore-0.0.7.jar
+
+# Define environment variables and start the app
+MYSQL_HOST=jdbc:mysql://cheetah-dev-db-instance.csfsieiow07g.us-east-1.rds.amazonaws.com:3306/datastore \
+MYSQL_USERNAME=root \
+MYSQL_PASSWORD=shivakumar \
+LOG_FILE_PATH=/var/log/app/datastore.log \
+nohup java -jar /home/ec2-user/datastore-0.0.7.jar > /var/log/app/nohup.out 2>&1 &
+
+# Install CloudWatch Agent
+yum install -y amazon-cloudwatch-agent
+
+# Create CloudWatch Agent configuration file
+cat << EOF > /opt/aws/amazon-cloudwatch-agent/etc/amazon-cloudwatch-agent.json
+{
+  "logs": {
+    "logs_collected": {
+      "files": {
+        "collect_list": [
+          {
+            "file_path": "/var/log/app/datastore.log",
+            "log_group_name": "/datastore/app",
+            "log_stream_name": "{instance_id}",
+            "timestamp_format": "%Y-%m-%d %H:%M:%S"
+          }
+        ]
+      }
+    }
+  }
+}
+EOF
+
+# Start CloudWatch Agent
+/opt/aws/amazon-cloudwatch-agent/bin/amazon-cloudwatch-agent-ctl -a fetch-config -m ec2 -c file:/opt/aws/amazon-cloudwatch-agent/etc/amazon-cloudwatch-agent.json -s
+
+
+docker run --name=mydb -e MYSQL_ROOT_PASSWORD=shivakumar -d mysql
+docker run --name=be-app -d --link mydb -e "MYSQL_HOST=jdbc:mysql://mydb:3306/datastore?createDatabaseIfNotExist=true" -e MYSQL_USERNAME=root -e MYSQL_PASSWORD=shivakumar datastore:v1
+docker run --name=fe-app --link be-app -e API_URL=http://be-app:8084 -p 8787:8080 -d datastore-frontend:v1

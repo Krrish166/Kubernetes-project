@@ -1,0 +1,13 @@
+FROM ubuntu
+MAINTAINER shiva
+RUN apt-get update -y
+RUN apt-get install -y openjdk-11-jdk
+#EXPOSE 8082
+WORKDIR /app/source
+COPY . .
+RUN ./mvnw clean package -Dspring.profiles.active=build
+RUN mv ./target/*.jar app.jar
+#HEALTHCHECK --interval=20s --timeout=3s \
+#  CMD curl -f http://localhost:8082/actuator/health || exit 1
+CMD ["java", "-jar", "app.jar"]
+#CMD ["java", "-jar", "./target/datastore-0.1.0.jar"]
