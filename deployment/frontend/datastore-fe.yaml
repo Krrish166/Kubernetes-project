@@ -1,0 +1,72 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: datastore-frontend
+  labels:
+    type: frontend
+  namespace: frontend
+spec:
+  template:
+    metadata:
+      name: datastore-frontend
+      labels:
+        type: frontend
+    spec:
+      containers:
+        - name: mywebapp
+          image: 634107240549.dkr.ecr.us-east-1.amazonaws.com/datastore-frontend:v47.0
+          env:
+            - name: API_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: datastore-fe-cm
+                  key: backendEndpoint
+          resources:
+            requests:
+              cpu: 100m
+              memory: "500Mi"
+            limits:
+              cpu: 1
+              memory: "1Gi"
+          livenessProbe:
+            httpGet:
+              path: /
+              port: 8080
+            initialDelaySeconds: 3
+            periodSeconds: 3
+            timeoutSeconds: 4
+            failureThreshold: 3
+          readinessProbe:
+            httpGet:
+              path: /
+              port: 8080
+            initialDelaySeconds: 3
+            periodSeconds: 3
+            timeoutSeconds: 4
+            failureThreshold: 3
+          startupProbe:
+            httpGet:
+              path: /
+              port: 8080
+            initialDelaySeconds: 3
+            periodSeconds: 3
+            timeoutSeconds: 4
+            failureThreshold: 3
+  replicas: 3
+  selector:
+    matchLabels:
+      type: frontend
+
+---
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: datastore-frontend-svc
+  namespace: frontend
+spec:
+  ports:
+    - port: 8081
+      targetPort: 8080
+  selector:
+    type: frontend

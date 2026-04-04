@@ -1,0 +1,20 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: app-ingress
+  labels:
+    name: datastore-ing
+  namespace: frontend
+spec:
+  ingressClassName: nginx
+  rules:
+    - host: datastore.makestudio.info
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: datastore-frontend-svc
+                port:
+                  number: 8081

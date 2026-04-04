@@ -1,0 +1,7 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: datastore-fe-cm
+  namespace: frontend
+data:
+  backendEndpoint: http://datastore-backend-svc.backend.svc.cluster.local:8081
