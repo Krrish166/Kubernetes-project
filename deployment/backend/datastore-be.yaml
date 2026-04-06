@@ -5,39 +5,50 @@ metadata:
   namespace: backend
   labels:
     type: backend
+
 spec:
   replicas: 1
+
   selector:
     matchLabels:
       type: backend
+
   template:
     metadata:
       labels:
         type: backend
+
     spec:
       containers:
         - name: datastore-backend
           image: 811572529216.dkr.ecr.ap-south-1.amazonaws.com/backend:latest
 
           ports:
-            - containerPort: 8084   # ✅ IMPORTANT
+            - containerPort: 8084
 
           env:
-            - name: MYSQL_HOST
+            # ✅ Correct Spring Boot DB configs
+            - name: SPRING_DATASOURCE_URL
               valueFrom:
                 configMapKeyRef:
                   name: datastore-be-cm
                   key: mysqlHost
-            - name: MYSQL_USERNAME
+
+            - name: SPRING_DATASOURCE_USERNAME
               valueFrom:
                 configMapKeyRef:
                   name: datastore-be-cm
                   key: mysqlUname
-            - name: MYSQL_PASSWORD
+
+            - name: SPRING_DATASOURCE_PASSWORD
               valueFrom:
                 secretKeyRef:
                   name: datastore-be-secret
                   key: mysqlPassword
+
+            # ✅ IMPORTANT: Auto create tables
+            - name: SPRING_JPA_HIBERNATE_DDL_AUTO
+              value: update
 
           resources:
             requests:
@@ -47,33 +58,34 @@ spec:
               cpu: 1
               memory: "1Gi"
 
-          # ✅ STARTUP PROBE (MOST IMPORTANT)
+          # ✅ Startup probe (gives time for DB connection)
           startupProbe:
             httpGet:
-              path: /actuator
-              port: 8084
-            initialDelaySeconds: 40
-            periodSeconds: 5
-            failureThreshold: 10
-
-          # ✅ READINESS PROBE
-          readinessProbe:
-            httpGet:
-              path: /actuator
-              port: 8084
-            initialDelaySeconds: 40
-            periodSeconds: 5
-            timeoutSeconds: 5
-            failureThreshold: 5
-
-          # ✅ LIVENESS PROBE
-          livenessProbe:
-            httpGet:
-              path: /actuator
+              path: /actuator/health
               port: 8084
             initialDelaySeconds: 60
             periodSeconds: 10
-            timeoutSeconds: 5
+            timeoutSeconds: 2
+            failureThreshold: 10
+
+          # ✅ Readiness probe
+          readinessProbe:
+            httpGet:
+              path: /actuator/health
+              port: 8084
+            initialDelaySeconds: 40
+            periodSeconds: 10
+            timeoutSeconds: 2
+            failureThreshold: 5
+
+          # ✅ Liveness probe
+          livenessProbe:
+            httpGet:
+              path: /actuator/health
+              port: 8084
+            initialDelaySeconds: 40
+            periodSeconds: 10
+            timeoutSeconds: 2
             failureThreshold: 5
 
 ---
@@ -86,9 +98,11 @@ metadata:
   annotations:
     prometheus.io/path: /actuator/prometheus
     prometheus.io/scrape: "true"
+
 spec:
+  selector:
+    type: backend
+
   ports:
     - port: 8081
       targetPort: 8084
-  selector:
-    type: backend
