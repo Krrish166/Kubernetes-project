@@ -27,7 +27,6 @@ spec:
             - containerPort: 8084
 
           env:
-            # ✅ Correct Spring Boot DB configs
             - name: SPRING_DATASOURCE_URL
               valueFrom:
                 configMapKeyRef:
@@ -46,9 +45,12 @@ spec:
                   name: datastore-be-secret
                   key: mysqlPassword
 
-            # ✅ IMPORTANT: Auto create tables
             - name: SPRING_JPA_HIBERNATE_DDL_AUTO
               value: update
+
+            # ✅ Added (prevents dialect detection issues)
+            - name: SPRING_JPA_DATABASE_PLATFORM
+              value: org.hibernate.dialect.MySQL8Dialect
 
           resources:
             requests:
@@ -58,38 +60,37 @@ spec:
               cpu: 1
               memory: "1Gi"
 
-          # ✅ Startup probe (gives time for DB connection)
+          # ✅ Startup Probe (for DB + Hibernate delay)
           startupProbe:
             httpGet:
               path: /actuator/health
               port: 8084
             initialDelaySeconds: 60
             periodSeconds: 10
-            timeoutSeconds: 2
-            failureThreshold: 10
+            timeoutSeconds: 3
+            failureThreshold: 15   # ~150 seconds max startup time
 
-          # ✅ Readiness probe
+          # ✅ Readiness Probe (traffic control)
           readinessProbe:
             httpGet:
               path: /actuator/health
               port: 8084
-            initialDelaySeconds: 40
-            periodSeconds: 10
-            timeoutSeconds: 2
+            initialDelaySeconds: 30
+            periodSeconds: 5
+            timeoutSeconds: 3
             failureThreshold: 5
 
-          # ✅ Liveness probe
+          # ✅ Liveness Probe (only kill if truly dead)
           livenessProbe:
             httpGet:
               path: /actuator/health
               port: 8084
-            initialDelaySeconds: 40
+            initialDelaySeconds: 90   # IMPORTANT: after startup
             periodSeconds: 10
-            timeoutSeconds: 2
+            timeoutSeconds: 3
             failureThreshold: 5
 
 ---
-
 apiVersion: v1
 kind: Service
 metadata:
