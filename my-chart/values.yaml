@@ -1,0 +1,38 @@
+studentStore:
+  frontend:
+    image: 811572529216.dkr.ecr.ap-south-1.amazonaws.com/frontend:latest
+    replicaCount: 3
+    namespace: frontend
+    
+    resources:
+      requests:
+        cpu: 100m
+        memory: "500Mi"
+      limits:
+        cpu: 1
+        memory: "1Gi"
+
+    livenessProbe:
+            httpGet:
+              path: /
+              port: 8080
+            initialDelaySeconds: 3
+            periodSeconds: 3
+            timeoutSeconds: 4
+            failureThreshold: 3
+    
+    readinessProbe:
+            httpGet:
+              path: /
+              port: 8080
+            initialDelaySeconds: 3
+            periodSeconds: 3
+            timeoutSeconds: 4
+            failureThreshold: 3
+
+    service:
+      port: 8081
+      targetPort: 8080
+
+frontendConfigMap:
+  backendEndpoint: http://datastore-backend-svc.backend.svc.cluster.local:8081

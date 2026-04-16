@@ -1,0 +1,43 @@
+studentStore:
+  backend:
+    namespace: backend
+    image: 811572529216.dkr.ecr.ap-south-1.amazonaws.com/backend:latest
+    port: 8084
+    replicaCount: 1
+  
+    resources:
+      requests:
+        cpu: 100m
+        memory: "500Mi"
+      limits:
+        cpu: 1
+        memory: "1Gi"
+    
+    livenessProbe:
+            httpGet:
+              path: /actuator/health
+              port: 8084
+            initialDelaySeconds: 90   # IMPORTANT: after startup
+            periodSeconds: 10
+            timeoutSeconds: 3
+            failureThreshold: 5
+
+    readinessProbe:
+            httpGet:
+              path: /actuator/health
+              port: 8084
+            initialDelaySeconds: 30
+            periodSeconds: 5
+            timeoutSeconds: 3
+            failureThreshold: 5
+
+backendSvc:
+  port: 8084
+  targetPort: 8084
+
+backendSecret:
+  mysqlPassword: YmlqYXlhMTIz
+
+backendConfigMap:
+  mysqlHost: jdbc:mysql://database-1.c7ko02u0ih4r.ap-south-1.rds.amazonaws.com:3306/datastore?createDatabaseIfNotExist=true
+

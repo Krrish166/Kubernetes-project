@@ -1,0 +1,8 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: datastore-be-cm
+  namespace: backend
+data:
+  mysqlHost: {{.Values.backendConfigMap.mysqlHost}}
+  mysqlUname: admin
